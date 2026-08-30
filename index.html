@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>DailyHub — Super App Mockup</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app-wrapper">
+    <div class="phone-frame" id="phone-frame">
+
+      <!-- Purely decorative status bar, for mobile realism only -->
+      <div class="status-bar" aria-hidden="true">
+        <span>9:41</span>
+        <span class="status-icons">●●●</span>
+      </div>
+
+      <!-- ===================== ONBOARDING ===================== -->
+      <!-- Identical for both experimental conditions. No mention of
+           privacy, control, convenience, value, time savings, or risk:
+           those concepts belong to the treatment framing shown afterwards. -->
+      <div id="onboarding" class="onboarding">
+       <div class="onboarding-content">
+        <div class="onboarding-step" data-step="1">
+          <div class="onboarding-art" aria-hidden="true">
+            <span class="onb-icon icon-banking"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2.5"></rect><path d="M3 10h18"></path><circle cx="16.5" cy="14" r="1.3" fill="currentColor" stroke="none"></circle></svg></span>
+            <span class="onb-icon icon-shopping"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h12l-1 12.5a2 2 0 0 1-2 1.5H9a2 2 0 0 1-2-1.5L6 8Z"></path><path d="M9 8V6a3 3 0 0 1 6 0v2"></path></svg></span>
+            <span class="onb-icon icon-delivery"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2v7a2 2 0 0 0 4 0V2"></path><path d="M8 9v13"></path><path d="M17 2c-1.7 1-2.6 3.1-2.6 5.6S15.3 12 17 13v9"></path></svg></span>
+            <span class="onb-icon icon-mobility"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 2 4 21l8-4 8 4L12 2Z"></path></svg></span>
+            <span class="onb-icon icon-public"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 2h7l5 5v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z"></path><path d="M14 2v5h5"></path><path d="M8 13h8M8 17h8M8 9h3"></path></svg></span>
+          </div>
+          <h1>Welcome to DailyHub</h1>
+          <p>DailyHub brings several everyday services into one app.</p>
+        </div>
+
+        <div class="onboarding-step hidden" data-step="2">
+          <div class="onboarding-art solo" aria-hidden="true">
+            <span class="onb-badge">1</span>
+          </div>
+          <h1>One account, many services</h1>
+          <p>One account can connect payments, shopping, food, transport, and public services.</p>
+        </div>
+
+        <div class="onboarding-step hidden" data-step="3">
+          <div class="onboarding-art solo" aria-hidden="true">
+            <span class="onb-icon-lg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M12 2 4 21l8-4 8 4L12 2Z"></path></svg></span>
+          </div>
+          <h1>Explore at your own pace</h1>
+          <p>Feel free to look around and try whatever interests you. There's no right way to use DailyHub.</p>
+        </div>
+
+        <div class="onboarding-progress" aria-hidden="true">
+          <span class="dot active" data-dot="1"></span>
+          <span class="dot" data-dot="2"></span>
+          <span class="dot" data-dot="3"></span>
+        </div>
+       </div>
+
+        <button id="onboarding-next" class="primary-button">Next</button>
+      </div>
+
+      <!-- ===================== MAIN APP ===================== -->
+      <div id="main-app" class="main-app hidden">
+        <header class="app-header">
+          <div>
+            <p class="label">Super App Mockup</p>
+            <h1 id="main-title">DailyHub</h1>
+          </div>
+          <button id="data-center-button" class="small-button">
+            <span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.5 8.5 8 10 4.5-1.5 8-5 8-10V5l-8-3Z"></path></svg></span>
+            Data Center
+          </button>
+        </header>
+
+        <section id="framing-section" class="framing-card">
+          <div id="treatment-chip" class="treatment-chip">
+            <span id="treatment-chip-icon" class="treatment-chip-icon" aria-hidden="true"></span>
+            <span id="treatment-chip-text"></span>
+          </div>
+          <h2 id="framing-title"></h2>
+          <p id="framing-text"></p>
+        </section>
+
+        <main id="app-main">
+          <nav class="crumb hidden" id="crumb" aria-label="Breadcrumb">
+            <span id="crumb-text"></span>
+          </nav>
+
+          <section id="home-screen">
+            <div class="dashboard-card">
+              <p class="eyebrow">One account</p>
+              <h3>Everything connected in DailyHub</h3>
+              <p>Explore any of the services below — there's no right way to use the app.</p>
+              <div class="dashboard-stats">
+                <div>
+                  <strong>5</strong>
+                  <span>Services</span>
+                </div>
+                <div>
+                  <strong>1</strong>
+                  <span>Account</span>
+                </div>
+              </div>
+            </div>
+
+            <h3 class="section-title">Explore services</h3>
+            <div id="service-grid" class="service-grid"></div>
+          </section>
+
+          <section id="detail-screen" class="hidden">
+            <div class="screen-topbar">
+              <button id="detail-back-button" class="back-button">
+                <span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></span>
+                Home
+              </button>
+            </div>
+
+            <div id="service-detail" class="detail-card"></div>
+
+            <h3 class="section-title">Available features</h3>
+            <div id="feature-grid" class="feature-grid"></div>
+          </section>
+
+          <section id="action-screen" class="hidden">
+            <div class="screen-topbar">
+              <button id="action-back-button" class="back-button">
+                <span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></span>
+                <span id="action-back-label">Service</span>
+              </button>
+            </div>
+
+            <div id="action-detail" class="detail-card"></div>
+          </section>
+
+          <section id="privacy-screen" class="hidden">
+            <div class="screen-topbar">
+              <button id="privacy-back-button" class="back-button">
+                <span class="btn-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></span>
+                Home
+              </button>
+            </div>
+
+            <div class="detail-card">
+              <p class="eyebrow">Data Center</p>
+              <h2>Privacy &amp; permissions</h2>
+              <p>See what each connected service can access, and adjust it below. This is a simulated preview only — it does not affect any real account or personal data.</p>
+
+              <div id="permission-list" class="permission-list"></div>
+            </div>
+          </section>
+
+          <section id="completion-screen" class="hidden">
+            <div class="detail-card completion-card">
+              <span class="completion-check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></span>
+              <h2>You're all set</h2>
+              <p>Thanks for exploring DailyHub. Your session has been recorded.</p>
+              <p class="completion-note">You can now return to the questionnaire to continue.</p>
+            </div>
+          </section>
+        </main>
+
+        <footer id="app-footer">
+          <button id="finish-button" class="finish-button">Continue to questionnaire</button>
+        </footer>
+
+        <div class="home-indicator" aria-hidden="true"></div>
+      </div>
+    </div>
+
+    <aside class="debug-panel">
+      <h2>Tracking Preview</h2>
+      <p>Debug-only view. Visible because this page was opened with <code>?debug=1</code>.</p>
+      <pre id="tracking-output"></pre>
+    </aside>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
