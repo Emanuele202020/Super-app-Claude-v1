@@ -814,6 +814,99 @@ function updateTrackingPreview() {
 }
 
 /* -------------------------------------------------------------------------
+   6b. QUALTRICS HANDOFF
+   DailyHub is opened from Qualtrics via a plain same-tab link (not an
+   iframe — the respondent-facing Qualtrics renderer strips <iframe> tags
+   on this account, and there is no Question JavaScript feature available
+   to inject one via the DOM instead). So the trip back to Qualtrics uses
+   the same zero-JS mechanism already used to get INTO DailyHub: a
+   same-tab redirect carrying data as URL query parameters, captured back
+   into Qualtrics Embedded Data by a "Set Embedded Data" flow element
+   ("Value will be set from Panel or URL") positioned right after the
+   DailyHub block in Survey Flow.
+
+   Because this is a same-tab navigation (not a new tab/window), the
+   respondent's existing Qualtrics session cookie for this survey survives
+   the round trip to this domain and back, so Qualtrics resumes the same
+   in-progress response instead of starting a new one.
+
+   Field names below match the existing Qualtrics Embedded Data fields
+   exactly. The mockup's internal `treatment_condition` is sent as
+   `dailyhub_reported_condition` — that is the paradata field Qualtrics
+   already has reserved for "what condition DailyHub actually rendered",
+   used as a verification cross-check against the treatment_condition
+   Qualtrics itself assigned (the authoritative value, set by the
+   Survey Flow Randomizer before DailyHub ever loads).
+   ------------------------------------------------------------------------- */
+const DEFAULT_RETURN_URL = "https://qualtricsxmrwrfhr785.qualtrics.com/jfe/form/SV_6JCz6auQy97TTzU";
+
+/**
+ * Where to send the respondent back to. Qualtrics's link to DailyHub
+ * always includes a `return_url` param (percent-encoded) pointing at the
+ * exact survey URL the respondent started from — this makes preview-mode
+ * testing (session-specific preview URLs) and the live Anonymous Link
+ * both work correctly without any code change. DEFAULT_RETURN_URL is only
+ * a safety net for the rare case DailyHub is opened without that param.
+ */
+function resolveReturnUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const fromParam = params.get("return_url");
+  if (fromParam) {
+    try {
+      const decoded = decodeURIComponent(fromParam);
+      if (/^https?:\/\//i.test(decoded)) return decoded;
+    } catch (err) { /* malformed param, fall through to default */ }
+  }
+  return DEFAULT_RETURN_URL;
+}
+
+/**
+ * Builds the URL DailyHub redirects to once the respondent finishes,
+ * appending every paradata field Qualtrics expects as a query parameter
+ * on top of whatever query string the return URL already has.
+ */
+function buildContinueUrl(finalData) {
+  let base;
+  try {
+    base = new URL(resolveReturnUrl());
+  } catch (err) {
+    base = new URL(DEFAULT_RETURN_URL);
+  }
+
+  const fieldMap = {
+    dailyhub_reported_condition: finalData.treatment_condition,
+    mockup_start_time_iso: finalData.mockup_start_time_iso,
+    first_click_service: finalData.first_click_service,
+    time_to_first_click_sec: finalData.time_to_first_click_sec,
+    service_click_sequence: finalData.service_click_sequence,
+    feature_click_sequence: finalData.feature_click_sequence,
+    micro_action_sequence: finalData.micro_action_sequence,
+    total_clicks: finalData.total_clicks,
+    services_clicked_count: finalData.services_clicked_count,
+    features_clicked_count: finalData.features_clicked_count,
+    total_time_on_mockup_sec: finalData.total_time_on_mockup_sec,
+    privacy_info_clicked: finalData.privacy_info_clicked,
+    permission_toggles_count: finalData.permission_toggles_count,
+    banking_clicked: finalData.banking_clicked,
+    shopping_clicked: finalData.shopping_clicked,
+    delivery_clicked: finalData.delivery_clicked,
+    mobility_clicked: finalData.mobility_clicked,
+    public_services_clicked: finalData.public_services_clicked,
+    last_screen: finalData.last_screen,
+    onboarding_completed: finalData.onboarding_completed,
+    onboarding_time_sec: finalData.onboarding_time_sec
+  };
+
+  Object.keys(fieldMap).forEach(key => {
+    let value = fieldMap[key];
+    if (value === null || value === undefined) value = "";
+    base.searchParams.set(key, String(value));
+  });
+
+  return base.toString();
+}
+
+/* -------------------------------------------------------------------------
    7. ONBOARDING CONTROLLER
    Identical copy for both conditions, no mention of privacy / convenience /
    value / time / risk. Onboarding clicks are intentionally NOT passed to
@@ -953,6 +1046,20 @@ function wireEvents() {
     setCrumb(null);
     showScreen("completed");
     document.getElementById("app-footer").classList.add("hidden");
+
+    // Hand the paradata back to Qualtrics via a same-tab redirect (see
+    // section 6b above). The visible link is the recovery path if the
+    // automatic redirect is delayed or blocked by the browser; it is
+    // wired up immediately so it is never a dead end.
+    const continueUrl = buildContinueUrl(finalData);
+    const continueLink = document.getElementById("continue-to-questionnaire-link");
+    if (continueLink) {
+      continueLink.href = continueUrl;
+    }
+
+    window.setTimeout(() => {
+      window.location.href = continueUrl;
+    }, 1200);
   });
 }
 

@@ -1082,6 +1082,17 @@ p {
   margin-top: 14px;
 }
 
+.completion-link {
+  display: inline-block;
+  width: auto;
+  max-width: none;
+  margin-top: 18px;
+  text-decoration: none;
+  text-align: center;
+  box-sizing: border-box;
+  padding: 12px 26px;
+}
+
 /* ---------------------------------------------------------------------
    Footer
    --------------------------------------------------------------------- */
