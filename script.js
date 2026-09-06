@@ -815,64 +815,48 @@ function updateTrackingPreview() {
 
 /* -------------------------------------------------------------------------
    6b. QUALTRICS HANDOFF
-   DailyHub is opened from Qualtrics via a plain same-tab link (not an
-   iframe — the respondent-facing Qualtrics renderer strips <iframe> tags
-   on this account, and there is no Question JavaScript feature available
-   to inject one via the DOM instead). So the trip back to Qualtrics uses
-   the same zero-JS mechanism already used to get INTO DailyHub: a
-   same-tab redirect carrying data as URL query parameters, captured back
-   into Qualtrics Embedded Data by a "Set Embedded Data" flow element
-   ("Value will be set from Panel or URL") positioned right after the
-   DailyHub block in Survey Flow.
+   DailyHub always opens in its OWN browser tab (the Qualtrics link uses
+   target="_blank"), so the respondent's Qualtrics tab is never navigated
+   away from and never reloaded. That matters because two things were
+   verified empirically against the live survey and both rule out any
+   handoff mechanism that reloads or re-visits the Qualtrics URL:
+     1. The respondent-facing Qualtrics renderer strips <iframe> tags on
+        this account, and there is no Question JavaScript feature
+        available on this (free) Qualtrics license to inject one via the
+        DOM, or to listen for window.postMessage from a child tab/frame.
+     2. A same-tab redirect back to the Anonymous Link — the previous
+        design used here — does NOT resume the in-progress response.
+        Every full navigation/reload of the bare survey URL starts a
+        brand-new response at the Consent question, even with "Allow
+        respondents to finish later" turned on and with zero query
+        parameters involved. Confirmed by direct testing: revisiting the
+        exact same URL after answering Consent showed a completely blank
+        Consent page again, and the Data Table logged a separate, mostly
+        empty response for it.
 
-   Because this is a same-tab navigation (not a new tab/window), the
-   respondent's existing Qualtrics session cookie for this survey survives
-   the round trip to this domain and back, so Qualtrics resumes the same
-   in-progress response instead of starting a new one.
+   With reload-based and JS-based handoffs both unavailable, the only
+   remaining zero-JS, zero-iframe, zero-reload mechanism is: keep the
+   Qualtrics tab open and untouched the whole time, and pass the paradata
+   back through the respondent themselves as a short text code they copy
+   here and paste into a text-entry question in Qualtrics (still Q9 — no
+   new question was added). Survey Flow then reads that answer with
+   ordinary piped text (${q://QID9/ChoiceTextEntryValue}) into a single
+   embedded data field, `dailyhub_raw_payload`, no different in kind from
+   any other question's answer — this is why it survives even though
+   nothing about the Qualtrics-side response ever reloads.
 
-   Field names below match the existing Qualtrics Embedded Data fields
-   exactly. The mockup's internal `treatment_condition` is sent as
-   `dailyhub_reported_condition` — that is the paradata field Qualtrics
-   already has reserved for "what condition DailyHub actually rendered",
-   used as a verification cross-check against the treatment_condition
-   Qualtrics itself assigned (the authoritative value, set by the
-   Survey Flow Randomizer before DailyHub ever loads).
+   The code is `;`-separated key=value pairs, each value
+   encodeURIComponent-escaped so the delimiter can never collide with the
+   data. All field names match the Qualtrics-side names the paradata was
+   always going to use.
    ------------------------------------------------------------------------- */
-const DEFAULT_RETURN_URL = "https://qualtricsxmrwrfhr785.qualtrics.com/jfe/form/SV_6JCz6auQy97TTzU";
 
 /**
- * Where to send the respondent back to. Qualtrics's link to DailyHub
- * always includes a `return_url` param (percent-encoded) pointing at the
- * exact survey URL the respondent started from — this makes preview-mode
- * testing (session-specific preview URLs) and the live Anonymous Link
- * both work correctly without any code change. DEFAULT_RETURN_URL is only
- * a safety net for the rare case DailyHub is opened without that param.
+ * Builds the short text code the respondent copies out of DailyHub and
+ * pastes back into Qualtrics. Same 20 fields the URL-based handoff used
+ * to send, just serialized as text instead of query parameters.
  */
-function resolveReturnUrl() {
-  const params = new URLSearchParams(window.location.search);
-  const fromParam = params.get("return_url");
-  if (fromParam) {
-    try {
-      const decoded = decodeURIComponent(fromParam);
-      if (/^https?:\/\//i.test(decoded)) return decoded;
-    } catch (err) { /* malformed param, fall through to default */ }
-  }
-  return DEFAULT_RETURN_URL;
-}
-
-/**
- * Builds the URL DailyHub redirects to once the respondent finishes,
- * appending every paradata field Qualtrics expects as a query parameter
- * on top of whatever query string the return URL already has.
- */
-function buildContinueUrl(finalData) {
-  let base;
-  try {
-    base = new URL(resolveReturnUrl());
-  } catch (err) {
-    base = new URL(DEFAULT_RETURN_URL);
-  }
-
+function buildHandoffCode(finalData) {
   const fieldMap = {
     dailyhub_reported_condition: finalData.treatment_condition,
     mockup_start_time_iso: finalData.mockup_start_time_iso,
@@ -897,13 +881,43 @@ function buildContinueUrl(finalData) {
     onboarding_time_sec: finalData.onboarding_time_sec
   };
 
-  Object.keys(fieldMap).forEach(key => {
-    let value = fieldMap[key];
-    if (value === null || value === undefined) value = "";
-    base.searchParams.set(key, String(value));
-  });
+  return Object.keys(fieldMap)
+    .map(key => {
+      let value = fieldMap[key];
+      if (value === null || value === undefined) value = "";
+      return `${key}=${encodeURIComponent(String(value))}`;
+    })
+    .join(";");
+}
 
-  return base.toString();
+/**
+ * Copies text to the clipboard, preferring the async Clipboard API and
+ * falling back to a hidden-textarea + execCommand for browsers/contexts
+ * (older mobile browsers, non-secure contexts) where that API is
+ * unavailable. Always resolves; never throws to the caller.
+ */
+function copyTextToClipboard(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    return navigator.clipboard.writeText(text).catch(() => legacyCopy(text));
+  }
+  return Promise.resolve(legacyCopy(text));
+}
+
+function legacyCopy(text) {
+  try {
+    const helper = document.createElement("textarea");
+    helper.value = text;
+    helper.style.position = "fixed";
+    helper.style.opacity = "0";
+    document.body.appendChild(helper);
+    helper.focus();
+    helper.select();
+    const ok = document.execCommand("copy");
+    document.body.removeChild(helper);
+    return ok;
+  } catch (err) {
+    return false;
+  }
 }
 
 /* -------------------------------------------------------------------------
@@ -1047,19 +1061,36 @@ function wireEvents() {
     showScreen("completed");
     document.getElementById("app-footer").classList.add("hidden");
 
-    // Hand the paradata back to Qualtrics via a same-tab redirect (see
-    // section 6b above). The visible link is the recovery path if the
-    // automatic redirect is delayed or blocked by the browser; it is
-    // wired up immediately so it is never a dead end.
-    const continueUrl = buildContinueUrl(finalData);
-    const continueLink = document.getElementById("continue-to-questionnaire-link");
-    if (continueLink) {
-      continueLink.href = continueUrl;
+    // Hand the paradata back to Qualtrics via a copy-paste code (see
+    // section 6b above) instead of a redirect: DailyHub runs in its own
+    // tab, so the Qualtrics tab is never touched.
+    const code = buildHandoffCode(finalData);
+    const codeBox = document.getElementById("handoff-code");
+    const copyButton = document.getElementById("copy-code-button");
+    const copyConfirmation = document.getElementById("copy-confirmation");
+    const closeButton = document.getElementById("close-tab-button");
+
+    if (codeBox) {
+      codeBox.value = code;
     }
 
-    window.setTimeout(() => {
-      window.location.href = continueUrl;
-    }, 1200);
+    if (copyButton) {
+      copyButton.addEventListener("click", () => {
+        copyTextToClipboard(code).then(() => {
+          if (copyConfirmation) copyConfirmation.classList.remove("hidden");
+          if (codeBox) {
+            codeBox.focus();
+            codeBox.select();
+          }
+        });
+      });
+    }
+
+    if (closeButton) {
+      closeButton.addEventListener("click", () => {
+        window.close();
+      });
+    }
   });
 }
 

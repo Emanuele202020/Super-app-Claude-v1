@@ -155,8 +155,12 @@
               <span class="completion-check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></span>
               <h2>You're all set</h2>
               <p>Thanks for exploring DailyHub. Your session has been recorded.</p>
-              <p class="completion-note">You'll be returned to the questionnaire automatically in a moment. If nothing happens, use the button below.</p>
-              <a id="continue-to-questionnaire-link" class="primary-button completion-link" href="#" rel="noopener">Continue to questionnaire</a>
+              <p class="completion-note">Copy the code below. Then switch back to your survey tab (it should still be open in another tab) and paste the code into the box provided there, then click Next.</p>
+              <textarea id="handoff-code" class="handoff-code-box" readonly rows="4" aria-label="Session code to paste into the survey"></textarea>
+              <button type="button" id="copy-code-button" class="primary-button completion-link">Copy code</button>
+              <p id="copy-confirmation" class="completion-note copy-confirmation hidden">Copied. Switch back to your survey tab now.</p>
+              <p class="completion-note">If you can't switch tabs, select the text above manually and copy it (long-press or click-and-drag, then copy).</p>
+              <button type="button" id="close-tab-button" class="secondary-button">Close this tab</button>
             </div>
           </section>
         </main>

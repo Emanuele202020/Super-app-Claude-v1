@@ -1093,6 +1093,44 @@ p {
   padding: 12px 26px;
 }
 
+.handoff-code-box {
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border, #d9dee6);
+  background: #f8fafc;
+  color: var(--text, #1f2937);
+  font-family: "SFMono-Regular", Consolas, Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  resize: none;
+}
+
+.copy-confirmation {
+  color: var(--success-text);
+  font-weight: 700;
+}
+
+.secondary-button {
+  display: inline-block;
+  width: auto;
+  margin-top: 12px;
+  background: transparent;
+  color: var(--text-subtle, #64748b);
+  border: 1px solid var(--border, #d9dee6);
+  border-radius: 12px;
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.secondary-button:hover {
+  background: #f1f5f9;
+}
+
 /* ---------------------------------------------------------------------
    Footer
    --------------------------------------------------------------------- */
