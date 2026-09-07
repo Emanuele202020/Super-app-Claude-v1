@@ -19,7 +19,10 @@
       <!-- ===================== ONBOARDING ===================== -->
       <!-- Identical for both experimental conditions. No mention of
            privacy, control, convenience, value, time savings, or risk:
-           those concepts belong to the treatment framing shown afterwards. -->
+           those concepts belong to the treatment framing shown afterwards.
+           Cut to a single short bilingual screen (EN + IT, or just one of
+           them if a lang=EN/IT param is present) — the simulated app
+           itself stays English-only from here on. -->
       <div id="onboarding" class="onboarding">
        <div class="onboarding-content">
         <div class="onboarding-step" data-step="1">
@@ -30,34 +33,12 @@
             <span class="onb-icon icon-mobility"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 2 4 21l8-4 8 4L12 2Z"></path></svg></span>
             <span class="onb-icon icon-public"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 2h7l5 5v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z"></path><path d="M14 2v5h5"></path><path d="M8 13h8M8 17h8M8 9h3"></path></svg></span>
           </div>
-          <h1>Welcome to DailyHub</h1>
-          <p>DailyHub brings several everyday services into one app.</p>
-        </div>
-
-        <div class="onboarding-step hidden" data-step="2">
-          <div class="onboarding-art solo" aria-hidden="true">
-            <span class="onb-badge">1</span>
-          </div>
-          <h1>One account, many services</h1>
-          <p>One account can connect payments, shopping, food, transport, and public services.</p>
-        </div>
-
-        <div class="onboarding-step hidden" data-step="3">
-          <div class="onboarding-art solo" aria-hidden="true">
-            <span class="onb-icon-lg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M12 2 4 21l8-4 8 4L12 2Z"></path></svg></span>
-          </div>
-          <h1>Explore at your own pace</h1>
-          <p>Feel free to look around and try whatever interests you. There's no right way to use DailyHub.</p>
-        </div>
-
-        <div class="onboarding-progress" aria-hidden="true">
-          <span class="dot active" data-dot="1"></span>
-          <span class="dot" data-dot="2"></span>
-          <span class="dot" data-dot="3"></span>
+          <p id="onboarding-text-en">Explore DailyHub, a simulation of a Super App combining everyday services in one place.</p>
+          <p id="onboarding-text-it">Esplora DailyHub, una simulazione di Super App che riunisce diversi servizi quotidiani in un'unica app.</p>
         </div>
        </div>
 
-        <button id="onboarding-next" class="primary-button">Next</button>
+        <button id="onboarding-next" class="primary-button">Start</button>
       </div>
 
       <!-- ===================== MAIN APP ===================== -->
@@ -153,20 +134,14 @@
           <section id="completion-screen" class="hidden">
             <div class="detail-card completion-card">
               <span class="completion-check" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></span>
-              <h2>You're all set</h2>
-              <p>Thanks for exploring DailyHub. Your session has been recorded.</p>
-              <p class="completion-note">Copy the code below. Then switch back to your survey tab (it should still be open in another tab) and paste the code into the box provided there, then click Next.</p>
-              <textarea id="handoff-code" class="handoff-code-box" readonly rows="4" aria-label="Session code to paste into the survey"></textarea>
-              <button type="button" id="copy-code-button" class="primary-button completion-link">Copy code</button>
-              <p id="copy-confirmation" class="completion-note copy-confirmation hidden">Copied. Switch back to your survey tab now.</p>
-              <p class="completion-note">If you can't switch tabs, select the text above manually and copy it (long-press or click-and-drag, then copy).</p>
-              <button type="button" id="close-tab-button" class="secondary-button">Close this tab</button>
+              <p>Experience completed.</p>
+              <p>Esperienza completata.</p>
             </div>
           </section>
         </main>
 
         <footer id="app-footer">
-          <button id="finish-button" class="finish-button">Continue to questionnaire</button>
+          <button id="finish-button" class="finish-button">Finish</button>
         </footer>
 
         <div class="home-indicator" aria-hidden="true"></div>

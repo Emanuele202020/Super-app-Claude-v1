@@ -99,6 +99,41 @@ function resolveCondition() {
 }
 
 /* -------------------------------------------------------------------------
+   2b. QUALTRICS HANDOFF — INCOMING (pass-through fields)
+   Qualtrics can't run its own JavaScript or embed a live iframe on this
+   account/license (confirmed: no Question-JavaScript feature is present,
+   and both <script> and <iframe> tags are rejected/stripped by Qualtrics'
+   own content validation when placed in question text). The only channel
+   Qualtrics offers for automatic, no-copy-paste data exchange is: read
+   URL query-string parameters into Embedded Data fields. That works
+   perfectly for a *fresh* page load, but Qualtrics' "finish later" resume
+   for an anonymous link only resumes when the query string is BYTE-FOR-
+   BYTE identical to the one that started the response — adding or
+   changing even one parameter makes Qualtrics start a brand-new response
+   instead of resuming (verified directly against this survey).
+
+   So instead of trying to resume the respondent's original response,
+   DailyHub's Finish button below sends the respondent to a FRESH load of
+   the same survey URL, with everything needed carried along as query
+   parameters: the condition, a few already-answered questions Qualtrics
+   piped in on the way here, and the full tracking payload. Qualtrics
+   Survey Flow reads all of that back into Embedded Data on that fresh
+   load, and Display Logic skips the questions the respondent already
+   answered, landing them directly on the next unanswered question. The
+   respondent never sees a code, a tab, or a second survey — just one
+   continuous page load.
+   ------------------------------------------------------------------------- */
+const incoming = new URLSearchParams(window.location.search);
+const passThrough = {
+  survey_language: incoming.get("survey_language") || incoming.get("lang") || "EN",
+  participant_id: incoming.get("participant_id") || "",
+  fam1: incoming.get("fam1") || "",
+  fam2: incoming.get("fam2") || "",
+  dh1: incoming.get("dh1") || ""
+};
+const uiLang = (incoming.get("lang") || incoming.get("survey_language") || "").toUpperCase();
+
+/* -------------------------------------------------------------------------
    3. SERVICES, FEATURES, MICRO-ACTIONS
    Every micro-action carries a "result" object used only for the small
    simulated feedback panel shown when it is clicked. The tracked label
@@ -814,50 +849,50 @@ function updateTrackingPreview() {
 }
 
 /* -------------------------------------------------------------------------
-   6b. QUALTRICS HANDOFF
-   DailyHub always opens in its OWN browser tab (the Qualtrics link uses
-   target="_blank"), so the respondent's Qualtrics tab is never navigated
-   away from and never reloaded. That matters because two things were
-   verified empirically against the live survey and both rule out any
-   handoff mechanism that reloads or re-visits the Qualtrics URL:
-     1. The respondent-facing Qualtrics renderer strips <iframe> tags on
-        this account, and there is no Question JavaScript feature
-        available on this (free) Qualtrics license to inject one via the
-        DOM, or to listen for window.postMessage from a child tab/frame.
-     2. A same-tab redirect back to the Anonymous Link — the previous
-        design used here — does NOT resume the in-progress response.
-        Every full navigation/reload of the bare survey URL starts a
-        brand-new response at the Consent question, even with "Allow
-        respondents to finish later" turned on and with zero query
-        parameters involved. Confirmed by direct testing: revisiting the
-        exact same URL after answering Consent showed a completely blank
-        Consent page again, and the Data Table logged a separate, mostly
-        empty response for it.
+   6b. QUALTRICS HANDOFF — OUTGOING (automatic return redirect)
+   DailyHub now opens in the SAME tab as the survey (Q9's link is a plain
+   same-tab link, no target="_blank"), because Qualtrics on this account/
+   license has no way to run its own JavaScript or embed a live iframe
+   (both confirmed: no Question-JavaScript feature exists, and both
+   <script> and <iframe> tags are rejected/stripped by Qualtrics' own
+   content validation). The only channel Qualtrics offers for automatic,
+   no-copy-paste data exchange is: read URL query-string parameters into
+   Embedded Data on a FRESH page load. A same-tab redirect back to the
+   bare survey URL does not "resume" the original response (Qualtrics'
+   finish-later resume only works when the query string is byte-for-byte
+   identical to the one that started the response — confirmed directly
+   against this survey) — instead it deliberately starts a second, fresh
+   response, and Survey Flow Display Logic skips every question already
+   answered in the first response, landing the respondent straight on the
+   next unanswered question (see Survey Flow: entry_mode carried back as
+   entry_mode=dailyhub_return). This is the "two-response carry-forward"
+   design: two rows appear in the Data Table per respondent (one
+   abandoned at Q9, one complete), and only the complete one is used at
+   analysis time.
 
-   With reload-based and JS-based handoffs both unavailable, the only
-   remaining zero-JS, zero-iframe, zero-reload mechanism is: keep the
-   Qualtrics tab open and untouched the whole time, and pass the paradata
-   back through the respondent themselves as a short text code they copy
-   here and paste into a text-entry question in Qualtrics (still Q9 — no
-   new question was added). Survey Flow then reads that answer with
-   ordinary piped text (${q://QID9/ChoiceTextEntryValue}) into a single
-   embedded data field, `dailyhub_raw_payload`, no different in kind from
-   any other question's answer — this is why it survives even though
-   nothing about the Qualtrics-side response ever reloads.
-
-   The code is `;`-separated key=value pairs, each value
-   encodeURIComponent-escaped so the delimiter can never collide with the
-   data. All field names match the Qualtrics-side names the paradata was
-   always going to use.
+   Field names below match the Embedded Data field names already declared
+   in Qualtrics Survey Flow exactly, so Survey Flow's top-of-flow
+   "Set Embedded Data" node can read them straight off the URL.
    ------------------------------------------------------------------------- */
 
+const QUALTRICS_SURVEY_BASE_URL =
+  "https://qualtricsxmrwrfhr785.qualtrics.com/jfe/form/SV_6JCz6auQy97TTzU";
+
 /**
- * Builds the short text code the respondent copies out of DailyHub and
- * pastes back into Qualtrics. Same 20 fields the URL-based handoff used
- * to send, just serialized as text instead of query parameters.
+ * Builds the full return URL that sends the respondent back into a fresh
+ * load of the Qualtrics survey, carrying the condition, the pass-through
+ * answers Qualtrics already had, and the complete tracking payload — all
+ * as query parameters Survey Flow reads into Embedded Data.
  */
-function buildHandoffCode(finalData) {
+function buildReturnUrl(finalData) {
   const fieldMap = {
+    entry_mode: "dailyhub_return",
+    survey_language: passThrough.survey_language,
+    participant_id: passThrough.participant_id,
+    treatment_condition: finalData.treatment_condition,
+    fam1: passThrough.fam1,
+    fam2: passThrough.fam2,
+    dh1: passThrough.dh1,
     dailyhub_reported_condition: finalData.treatment_condition,
     mockup_start_time_iso: finalData.mockup_start_time_iso,
     first_click_service: finalData.first_click_service,
@@ -881,43 +916,14 @@ function buildHandoffCode(finalData) {
     onboarding_time_sec: finalData.onboarding_time_sec
   };
 
-  return Object.keys(fieldMap)
-    .map(key => {
-      let value = fieldMap[key];
-      if (value === null || value === undefined) value = "";
-      return `${key}=${encodeURIComponent(String(value))}`;
-    })
-    .join(";");
-}
+  const params = new URLSearchParams();
+  Object.keys(fieldMap).forEach(key => {
+    let value = fieldMap[key];
+    if (value === null || value === undefined) value = "";
+    params.set(key, String(value));
+  });
 
-/**
- * Copies text to the clipboard, preferring the async Clipboard API and
- * falling back to a hidden-textarea + execCommand for browsers/contexts
- * (older mobile browsers, non-secure contexts) where that API is
- * unavailable. Always resolves; never throws to the caller.
- */
-function copyTextToClipboard(text) {
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    return navigator.clipboard.writeText(text).catch(() => legacyCopy(text));
-  }
-  return Promise.resolve(legacyCopy(text));
-}
-
-function legacyCopy(text) {
-  try {
-    const helper = document.createElement("textarea");
-    helper.value = text;
-    helper.style.position = "fixed";
-    helper.style.opacity = "0";
-    document.body.appendChild(helper);
-    helper.focus();
-    helper.select();
-    const ok = document.execCommand("copy");
-    document.body.removeChild(helper);
-    return ok;
-  } catch (err) {
-    return false;
-  }
+  return `${QUALTRICS_SURVEY_BASE_URL}?${params.toString()}`;
 }
 
 /* -------------------------------------------------------------------------
@@ -934,7 +940,7 @@ let onboardingSteps, onboardingDots, onboardingNextBtn;
 function updateOnboardingUI() {
   onboardingSteps.forEach((el, i) => el.classList.toggle("hidden", i !== onboardingIndex));
   onboardingDots.forEach((el, i) => el.classList.toggle("active", i === onboardingIndex));
-  onboardingNextBtn.textContent = onboardingIndex === onboardingSteps.length - 1 ? "Get started" : "Next";
+  onboardingNextBtn.textContent = onboardingIndex === onboardingSteps.length - 1 ? "Start" : "Next";
 }
 
 function completeOnboarding() {
@@ -1061,36 +1067,16 @@ function wireEvents() {
     showScreen("completed");
     document.getElementById("app-footer").classList.add("hidden");
 
-    // Hand the paradata back to Qualtrics via a copy-paste code (see
-    // section 6b above) instead of a redirect: DailyHub runs in its own
-    // tab, so the Qualtrics tab is never touched.
-    const code = buildHandoffCode(finalData);
-    const codeBox = document.getElementById("handoff-code");
-    const copyButton = document.getElementById("copy-code-button");
-    const copyConfirmation = document.getElementById("copy-confirmation");
-    const closeButton = document.getElementById("close-tab-button");
-
-    if (codeBox) {
-      codeBox.value = code;
-    }
-
-    if (copyButton) {
-      copyButton.addEventListener("click", () => {
-        copyTextToClipboard(code).then(() => {
-          if (copyConfirmation) copyConfirmation.classList.remove("hidden");
-          if (codeBox) {
-            codeBox.focus();
-            codeBox.select();
-          }
-        });
-      });
-    }
-
-    if (closeButton) {
-      closeButton.addEventListener("click", () => {
-        window.close();
-      });
-    }
+    // Automatic handoff: send the respondent straight back into a fresh
+    // load of the Qualtrics survey with everything Survey Flow needs
+    // riding along as query parameters (see section 6b above). No code
+    // to copy, no tab to switch, no manual navigation — the respondent
+    // just sees "Experience completed" for a moment and then the
+    // questionnaire continues on its own.
+    const returnUrl = buildReturnUrl(finalData);
+    window.setTimeout(() => {
+      window.location.href = returnUrl;
+    }, 700);
   });
 }
 
